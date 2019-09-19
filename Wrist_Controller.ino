@@ -22,7 +22,7 @@ const char main3[] PROGMEM = "about";
 const char main4[] PROGMEM = "power off";
 
 const char run1[] PROGMEM = "2servo";
-const char run2[] PROGMEM = "<>";
+const char run2[] PROGMEM = "";
 const char run3[] PROGMEM = "<>";
 const char run4[] PROGMEM = "<>";
 
@@ -38,6 +38,7 @@ const char *const settings[] PROGMEM = {string0,set1,set2,set3,set4,string0};
 
 int leftPot = 0, rightPot = 1, buttonPin = 2;
 int val, maxVal, minVal, maxSel, minSel, choice;
+bool deadzone = true;
 char buffer[6][10];
 
 void setup() {
@@ -65,7 +66,7 @@ void setup() {
 }
 
 int drawWindow(int x, int y, int sizex, int sizey, String title, String dialog) {
-  int cursorY, tempSize = sizex/6 - 2;
+  int cursorY, tempSize = sizex/6 - 1;
   char temp[tempSize];
   
   display.drawRoundRect(x, y, sizex, sizey, WINDOW_RADIUS, WHITE);
@@ -85,10 +86,8 @@ int drawWindow(int x, int y, int sizex, int sizey, String title, String dialog) 
       } else {
         temp[j % tempSize] = ' ';
       }
-      Serial.println(j);
     }
     display.print(temp);
-    Serial.println(temp);
     cursorY += 8;
   }
 
@@ -116,15 +115,21 @@ int drawSelection(char above[10], char middle[10], char below[10]) {
 }
 
 bool getDialog(char text1[10], int x1, int y1, char text2[10], int x2, int y2) {
-  bool selection, button;
-  int val;
+  bool selection, button, reset = false;
+  int val, sel;
 
   display.setTextSize(1);
   
   do {
     button = digitalRead(buttonPin);
     val = analogRead(leftPot);
+    sel = analogRead(rightPot);
     val = map(val, minVal, maxVal, 0, 63);
+    sel = map(sel, minSel, maxSel, 0, 63);
+
+    if (sel < 50) {
+      reset = true;
+    }
     
     if (val <= 31) {
       display.setCursor(x1,y1);
@@ -143,8 +148,11 @@ bool getDialog(char text1[10], int x1, int y1, char text2[10], int x2, int y2) {
       display.print(text2);
       selection = true;
     }
+
+    display.drawLine(127,0,127,sel,WHITE);
+    display.drawLine(127,63,127,sel,BLACK);
     display.display();
-  } while (!button);
+  } while ((sel < 60) || !reset);
   return selection;
 }
 
@@ -181,7 +189,9 @@ int servo2(bool deadzone) {
   int val, sel, leftServo = 0, rightServo = 0, deadCycle;
   bool button;
   
-  
+  display.clearDisplay();
+  display.display();
+
   do {
     button = digitalRead(buttonPin);
     val = analogRead(leftPot);
@@ -189,6 +199,13 @@ int servo2(bool deadzone) {
     val = constrain(map(val, minVal, maxVal, 80, 180), 80, 180);
     sel = constrain(map(sel, minSel, maxSel, 80, 180), 80, 180);
 
+    if (deadzone) {
+      left.detach();
+      right.detach();
+    } else {
+      deadCycle = 0;
+    }
+    
     if ((abs(leftServo - val) > 30) || (abs(rightServo - sel) > 30)) {
       deadCycle = 0;
       Serial.println("attached");
@@ -214,20 +231,14 @@ int servo2(bool deadzone) {
       left.write(val);
       right.write(sel);
     }
-    left.detach();
-    right.detach();
-    Serial.println("detached");
+
   } while (sel > 82);
-  left.detach();
+
+  left.detach(); // makes sure servos detach when finished.
   right.detach();
 }
 
 void loop() {
-  
-  display.clearDisplay();
-  drawWindow(32,16,64,48, "Title", "Dialog");
-  display.display();
-  delay(2000);
   
   do {
     for (int i = 0; i < 6; i++) {
@@ -244,15 +255,24 @@ void loop() {
         choice = getSelection(buffer);
         switch (choice) {
           case 1:
-            servo2(false);
+            servo2(deadzone);
             break;
         }
         break;
         
       case 2:
-        //setBuffer(buffer, settings);
+        for (int i=0; i < 6; i++) {
+          strcpy_P(buffer[i], (char *)pgm_read_word(&(settings[i])));
+        }
         choice = getSelection(buffer);
-        
+
+        switch (choice) {
+          case 1:
+            display.clearDisplay();
+            drawWindow(16,4,96,56,"Settings","Enable servo deadzone?");
+            deadzone = getDialog("disable",18,40,"enable",64,40);
+        }
+        break;
       case 3:
         display.clearDisplay();
         drawWindow(1,1,126,62,"About","V1.0    Developed by: Joseph Loveday");
