@@ -22,27 +22,34 @@ const char main3[] PROGMEM = "about";
 const char main4[] PROGMEM = "power off";
 
 const char run1[] PROGMEM = "2servo";
-const char run2[] PROGMEM = "";
-const char run3[] PROGMEM = "<>";
-const char run4[] PROGMEM = "<>";
+const char run2[] PROGMEM = "randServo";
+const char run3[] PROGMEM = "stopwatch";
+const char run4[] PROGMEM = "calculator";
 
 const char set1[] PROGMEM = "deadzone";
-const char set2[] PROGMEM = "two";
+const char set2[] PROGMEM = "calibrate";
 const char set3[] PROGMEM = "three";
 const char set4[] PROGMEM = "four";
+
+const char dialog0[] PROGMEM = "Maximum";
+const char dialog1[] PROGMEM = "Minimum";
+const char dialog2[] PROGMEM = "V1.0\nDeveloped by Joseph Loveday";
 
 
 const char *const main[] PROGMEM = {string0,main1,main2,main3,main4,string0};
 const char *const runProgs[] PROGMEM = {string0,run1,run2,run3,run4,string0};
 const char *const settings[] PROGMEM = {string0,set1,set2,set3,set4,string0};
+const char *const dialog[] PROGMEM = {dialog0,dialog1,dialog2};
 
 int leftPot = 0, rightPot = 1, buttonPin = 2;
 int val, maxVal, minVal, maxSel, minSel, choice;
 bool deadzone = true;
 char buffer[6][10];
+char dialogBuffer[24];
 
 void setup() {
   Serial.begin(9600);
+  pinMode(buttonPin, INPUT_PULLUP);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
@@ -51,14 +58,21 @@ void setup() {
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     for(;;); // Don't proceed, loop forever
   }
+  calibrate();
+}
+
+void calibrate() {
+
   display.clearDisplay();
-  drawWindow(16,16,96,48,"Calibration","Move sliders to their maximum");
+  strcpy(dialogBuffer, (char *)pgm_read_word(&(dialog[0])));
+  drawWindow(16,16,96,48,"Calibration",dialogBuffer);
   display.display();
   delay(2000);
   maxVal = analogRead(leftPot);
   maxSel = analogRead(rightPot);
   display.clearDisplay();
-  drawWindow(16,16,96,48,"Calibration","Move sliders to their minimum");
+  strcpy(dialogBuffer, (char *)pgm_read_word(&(dialog[1])));
+  drawWindow(16,16,96,48,"Calibration",dialogBuffer);
   display.display();
   delay(2000);
   minVal = analogRead(leftPot);
@@ -67,7 +81,7 @@ void setup() {
 
 int drawWindow(int x, int y, int sizex, int sizey, String title, String dialog) {
   int cursorY, tempSize = sizex/6 - 1;
-  char temp[tempSize];
+  char temp[tempSize + 1];
   
   display.drawRoundRect(x, y, sizex, sizey, WINDOW_RADIUS, WHITE);
   display.setCursor(x+4,y+4);
@@ -80,6 +94,7 @@ int drawWindow(int x, int y, int sizex, int sizey, String title, String dialog) 
   cursorY = y+16;
   for (int i = 0; i < ceil((float)dialog.length()/(float)tempSize); i++) {
     display.setCursor(x+4,cursorY);
+    temp[tempSize] = '\n';
     for (int j = i * tempSize; j < (i + 1) * tempSize; j++) {
       if (j < dialog.length()) {
         temp[j % tempSize] = dialog[j];
@@ -167,7 +182,7 @@ int getSelection(char items[6][10]) {
     val = constrain(map(val, minVal, maxVal, 1, 4), 1, 4);
     sel = map(sel, minSel, maxSel, 0, 63);
 
-    if (sel < 50) {
+    if ((sel < 50) && button) {
       reset = true; // make sure we aren't flicking to next menu
     }
     
@@ -176,15 +191,85 @@ int getSelection(char items[6][10]) {
     display.drawLine(0,0,0,val*15+3,WHITE);
     display.drawLine(127,0,127,sel,WHITE);
     display.display();
-  } while ((sel < 60) || !reset);
+  } while ((sel < 60) && button || !reset);
+  
+  if (!button) {
+    val = 0;
+  }
 
   return val;
 }
 
+void drawNums() {
+  display.setCursor(56,32);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("7 8 9 + -");
+  display.setCursor(56,40);
+  display.print("4 5 6 * / ");
+  display.setCursor(56,48);
+  display.print("1 2 3 0 . =");
+}
+
+char getNum() {
+  int val, sel, prevX = 63, prevY = 31;
+  int result;
+  bool button, reset = false;
+
+  do {
+    button = digitalRead(buttonPin);
+    val = analogRead(leftPot);
+    sel = analogRead(rightPot);
+    val = constrain(map(val, minVal, maxVal, 0, 5), 0, 5);
+    sel = constrain(map(sel, minSel, maxSel, 0, 2), 0, 2);
+
+    if (button) {
+      reset = true;
+    }
+
+    if ((prevX != val*12 + 55) || (prevY != sel*8 + 31)) {
+      display.drawRect(prevX, prevY, 10, 8, BLACK);
+    }
+
+    prevX = val*12 + 55;
+    prevY = sel*8 + 31;
+    display.drawRect(prevX, prevY, 10, 8, WHITE);
+    drawNums();
+
+    display.display();
+  } while (button || !reset);
+
+  if (val < 3) {
+    result = 55 - sel*3 + val; // 30 + number logic (for ASCII char)
+  } else if ((val == 3) && (sel == 2)) {
+    result = 48;
+  } else {
+    result = '.';
+  }
+
+  return result;
+}
+
+double parseDouble(char inChars[10]) {
+  int power = 1;
+  double result = 0.0;
+
+  for (int i = 9; i >=0; i--) {
+    if (inChars[i] == '.') {
+      result /= power;
+      power = 1;
+    } else if (inChars[i] != '\0') {
+      result += power * (double)(inChars[i] - 48);
+      power *= 10;
+    }
+  }
+
+  return result;
+}
 
 //---[programs]---------------------------------------------------
 
-int servo2(bool deadzone) {
+void servo2(bool deadzone) {
   Servo left, right;
   int val, sel, leftServo = 0, rightServo = 0, deadCycle;
   bool button;
@@ -213,7 +298,7 @@ int servo2(bool deadzone) {
       right.attach(10);
     }
     
-    while (deadCycle < 5000) {
+    while ((deadCycle < 5000) && button) {
       button = digitalRead(buttonPin);
       val = analogRead(leftPot);
       sel = analogRead(rightPot);
@@ -232,10 +317,45 @@ int servo2(bool deadzone) {
       right.write(sel);
     }
 
-  } while (sel > 82);
+  } while (button);
 
   left.detach(); // makes sure servos detach when finished.
   right.detach();
+}
+
+void calculator() {
+  double num1 = 0, num2 = 0;
+  char sequence[10];
+  int cycles = 0, val, sel, length = 0, power;
+  bool button;
+
+  for (int i = 0; i < 10; i++) {
+    sequence[i] = '\0';
+  }
+
+  do {
+    button = digitalRead(buttonPin);
+    
+    if (button) {
+      cycles = 0;
+    } else {
+      cycles++;
+    }
+
+    display.clearDisplay();
+
+    do {
+      sequence[length] = getNum();
+      length++;
+
+      display.clearDisplay();
+      display.setCursor(0,0);
+      display.print(parseDouble(sequence));
+      display.display();
+    } while (length < 6);
+
+  } while (cycles < 20);
+
 }
 
 void loop() {
@@ -248,7 +368,6 @@ void loop() {
     
     switch (choice) {
       case 1:
-        
         for (int i=0; i < 6; i++) {
           strcpy_P(buffer[i], (char *)pgm_read_word(&(runProgs[i])));
         }
@@ -256,6 +375,13 @@ void loop() {
         switch (choice) {
           case 1:
             servo2(deadzone);
+            break;
+
+          case 4:
+            calculator();
+            break;
+
+          default:
             break;
         }
         break;
@@ -271,16 +397,31 @@ void loop() {
             display.clearDisplay();
             drawWindow(16,4,96,56,"Settings","Enable servo deadzone?");
             deadzone = getDialog("disable",18,40,"enable",64,40);
+            break;
+
+          case 2:
+            calibrate();
+            break;
+
+          default:
+            break;
         }
         break;
       case 3:
+        for (int i = 0; i < 3; i++) {
+          strcpy(buffer[i],(char *)pgm_read_word(&(dialog[i])));
+        }
         display.clearDisplay();
-        drawWindow(1,1,126,62,"About","V1.0    Developed by: Joseph Loveday");
+        drawWindow(8,8,112,48,"About","V1.0   Developed by Joseph Loveday");
         display.display();
         delay(3000);
         break;
         
       case 4:
+        break;
+
+      default:
+        calibrate();
         break;
     }
   } while (choice != 4);

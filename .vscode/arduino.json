@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:nano",
+    "sketch": "Wrist_Controller.ino",
+    "port": "/dev/ttyUSB0",
+    "configuration": "cpu=atmega328old"
+}
