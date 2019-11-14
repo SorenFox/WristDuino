@@ -379,31 +379,33 @@ void calculator() {
   char inputMode = 'a'; // a = input num1, b = input num2, c = input operation
   char operationMode = 'a'; // a = inputting, b = exiting
 
-  for (int i = 0; i < 10; i++) {
-    sequence[i] = '\0';
-  }
-
   do {
     button = digitalRead(buttonPin);
-    
-    if (button) {
-      cycles = 0;
-    } else {
-      cycles++;
-    }
 
     display.clearDisplay();
 
+    for (int i = 0; i < 10; i++) {
+      sequence[i] = '\0';
+    }
+
     do {
-      sequence[length] = getNum();
-      if (sequence[length] == '<') {
-        sequence[length] = '\0';
-        sequence[length - 1] = '\0';
-        length--;
-      } else if (sequence[length] == '\0') {
-        operationMode = 'b';
-      } else {
-        length++;
+      if (inputMode <= 'b') { // check that we're inputting a number
+        sequence[length] = getNum();
+        if (sequence[length] == '<') {
+          sequence[length] = '\0';
+          sequence[length - 1] = '\0';
+          length--;
+        } else if (sequence[length] == '\0') {
+          if (inputMode == 'a') {
+            inputMode == 'b';
+          } else if (inputMode == 'b') {
+            inputMode == 'c';
+          }
+        } else {
+          length++;
+        }
+      } else if (inputMode == 'c') {
+        //operation == getOperation();
       }
 
       if (inputMode == 'a') {
@@ -419,13 +421,17 @@ void calculator() {
     } while (operationMode == 'a'); // exit number input after user holds button
 
     if (inputMode == 'a') {
+      String(num1,10).toCharArray(sequence, 10); // read the existing num1 into sequence
+      
       inputMode = 'b';
       operationMode = 'a';
     } else if (inputMode == 'b') {
+      String(num2,10).toCharArray(sequence, 10); // read the existing num2 into sequence
+      
       inputMode = 'c';
       operationMode = 'a';
     } else if (inputMode == 'c') {
-      result = calculate(num1,num2,operation);
+      result = calculate(num1,num2,operation); // calculate the actual result
       display.setCursor(0,20);
       display.print(result);
     }
