@@ -201,14 +201,25 @@ int getSelection(char items[6][10]) {
 }
 
 void drawNums() {
-  display.setCursor(56,32);
+  display.setCursor(64,32);
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  display.print("7 8 9 + -");
-  display.setCursor(56,40);
-  display.print("4 5 6 * / ");
-  display.setCursor(56,48);
-  display.print("1 2 3 0 . =");
+  display.print("7 8 9 D");
+  display.setCursor(64,40);
+  display.print("4 5 6 .");
+  display.setCursor(64,48);
+  display.print("1 2 3 0");
+}
+
+void drawOperators() {
+  display.setCursor(64,32);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.print("+ -");
+  display.setCursor(64,40);
+  display.print("* /");
+  display.setCursor(64,48);
+  display.print("^ √");
 }
 
 char getNum() {
@@ -220,18 +231,18 @@ char getNum() {
     button = digitalRead(buttonPin);
     val = analogRead(leftPot);
     sel = analogRead(rightPot);
-    val = constrain(map(val, minVal, maxVal, 0, 5), 0, 5);
+    val = constrain(map(val, minVal, maxVal, 0, 3), 0, 3);
     sel = constrain(map(sel, minSel, maxSel, 0, 2), 0, 2);
 
     if (button) {
       reset = true;
     }
 
-    if ((prevX != val*12 + 55) || (prevY != sel*8 + 31)) {
+    if ((prevX != val*12 + 63) || (prevY != sel*8 + 31)) {
       display.drawRect(prevX, prevY, 10, 8, BLACK);
     }
 
-    prevX = val*12 + 55;
+    prevX = val*12 + 63;
     prevY = sel*8 + 31;
     display.drawRect(prevX, prevY, 10, 8, WHITE);
     drawNums();
@@ -241,16 +252,18 @@ char getNum() {
 
   if (val < 3) {
     result = 55 - sel*3 + val; // 30 + number logic (for ASCII char)
-  } else if ((val == 3) && (sel == 2)) {
+  } else if (sel == 2) {
     result = 48;
-  } else {
+  } else if (sel == 1) {
     result = '.';
+  } else {
+    result = '<';
   }
 
   return result;
 }
 
-double parseDouble(char inChars[10]) {
+double parseDouble(char inChars[10]) { // parse a string of chars to a double
   int power = 1;
   double result = 0.0;
 
@@ -346,13 +359,19 @@ void calculator() {
 
     do {
       sequence[length] = getNum();
-      length++;
+      if (sequence[length] == '<') {
+        sequence[length] = '\0';
+        sequence[length - 1] = '\0';
+        length--;
+      } else {
+        length++;
+      }
 
       display.clearDisplay();
       display.setCursor(0,0);
       display.print(parseDouble(sequence));
       display.display();
-    } while (length < 6);
+    } while (length < 10);
 
   } while (cycles < 20);
 
