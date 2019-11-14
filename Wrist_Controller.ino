@@ -217,14 +217,14 @@ void drawOperators() {
   display.setTextColor(WHITE);
   display.print("+ -");
   display.setCursor(64,40);
-  display.print("* /");
+  display.print("* / l");
   display.setCursor(64,48);
-  display.print("^ √");
+  display.print("^ √ !");
 }
 
 char getNum() {
   int val, sel, prevX = 63, prevY = 31;
-  int result;
+  int cycles = 0, result;
   bool button, reset = false;
 
   do {
@@ -250,16 +250,24 @@ char getNum() {
     display.display();
   } while (button || !reset);
 
-  if (val < 3) {
-    result = 55 - sel*3 + val; // 30 + number logic (for ASCII char)
-  } else if (sel == 2) {
-    result = 48;
-  } else if (sel == 1) {
-    result = '.';
-  } else {
-    result = '<';
+  while (!button && cycles < 50) {
+    button = digitalRead(buttonPin);
+    cycles++;
   }
 
+  if (cycles < 50) {
+    if (val < 3) {
+      result = 55 - sel*3 + val; // 30 + number logic (for ASCII char)
+    } else if (sel == 2) {
+      result = 48;
+    } else if (sel == 1) {
+      result = '.';
+    } else {
+      result = '<';
+    }
+  } else {
+    result = '\0'; // indicate the end of a number
+  }
   return result;
 }
 
@@ -275,6 +283,32 @@ double parseDouble(char inChars[10]) { // parse a string of chars to a double
       result += power * (double)(inChars[i] - 48);
       power *= 10;
     }
+  }
+
+  return result;
+}
+
+double calculate(double num1, double num2, char operation) {
+  double result = 1;
+
+  if (operation == '+') {
+    result = num1 + num2;
+  } else if (operation == '-') {
+    result = num1 - num2;
+  } else if (operation == '*') {
+    result = num1 * num2;
+  } else if (operation == '/') {
+    result = num1 / num2;
+  } else if (operation == '^') {
+    result = pow(num1,num2);
+  } else if (operation == '!') {
+    for (int i = 1; i <= (int)num2; i++) {
+      result *= i;
+    }
+  } else if (operation == 's') {
+    result = sqrt(num2);
+  } else if (operation == 'l') {
+    result = log10(num1) / log10(num2);
   }
 
   return result;
@@ -337,10 +371,13 @@ void servo2(bool deadzone) {
 }
 
 void calculator() {
-  double num1 = 0, num2 = 0;
+  double num1 = 0, num2 = 0, result = 0;
+  char operation;
   char sequence[10];
   int cycles = 0, val, sel, length = 0, power;
   bool button;
+  char inputMode = 'a'; // a = input num1, b = input num2, c = input operation
+  char operationMode = 'a'; // a = inputting, b = exiting
 
   for (int i = 0; i < 10; i++) {
     sequence[i] = '\0';
@@ -363,15 +400,35 @@ void calculator() {
         sequence[length] = '\0';
         sequence[length - 1] = '\0';
         length--;
+      } else if (sequence[length] == '\0') {
+        operationMode = 'b';
       } else {
         length++;
       }
 
-      display.clearDisplay();
-      display.setCursor(0,0);
-      display.print(parseDouble(sequence));
+      if (inputMode == 'a') {
+        num1 = parseDouble(sequence);
+        display.setCursor(0,0);
+      } else if (inputMode == 'b') {
+        num2 = parseDouble(sequence);
+        display.setCursor(0,10);
+      }
+
+      display.print(sequence);
       display.display();
-    } while (length < 10);
+    } while (operationMode == 'a'); // exit number input after user holds button
+
+    if (inputMode == 'a') {
+      inputMode = 'b';
+      operationMode = 'a';
+    } else if (inputMode == 'b') {
+      inputMode = 'c';
+      operationMode = 'a';
+    } else if (inputMode == 'c') {
+      result = calculate(num1,num2,operation);
+      display.setCursor(0,20);
+      display.print(result);
+    }
 
   } while (cycles < 20);
 
