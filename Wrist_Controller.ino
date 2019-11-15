@@ -39,7 +39,6 @@ int leftPot = 0, rightPot = 1, buttonPin = 2;
 int val, maxVal, minVal, maxSel, minSel, choice;
 bool deadzone = true;
 char buffer[6][10];
-char dialogBuffer[24];
 
 void setup() {
   Serial.begin(9600);
@@ -58,13 +57,13 @@ void setup() {
 void calibrate() {
 
   display.clearDisplay();
-  drawWindow(16,16,96,48,F("Calibration"),dialogBuffer);
+  drawWindow(16,16,96,48,F("Calibration"),F("Move sliders to their maximum"));
   display.display();
   delay(2000);
   maxVal = analogRead(leftPot);
   maxSel = analogRead(rightPot);
   display.clearDisplay();
-  drawWindow(16,16,96,48,F("Calibration"),dialogBuffer);
+  drawWindow(16,16,96,48,F("Calibration"),F("Move sliders to their minimum"));
   display.display();
   delay(2000);
   minVal = analogRead(leftPot);
@@ -195,7 +194,6 @@ int getSelection(char items[6][10]) {
 void drawNums() {
   display.setCursor(64,40);
   display.setTextSize(1);
-  display.setTextColor(WHITE);
   display.print(F("7 8 9 D"));
   display.setCursor(64,48);
   display.print(F("4 5 6 ."));
@@ -206,7 +204,6 @@ void drawNums() {
 void drawOperators() {
   display.setCursor(64,40);
   display.setTextSize(1);
-  display.setTextColor(WHITE);
   display.print(F("+ -"));
   display.setCursor(64,48);
   display.print(F("* /"));
@@ -237,6 +234,7 @@ char getNum() {
     prevX = val*12 + 63;
     prevY = sel*8 + 39;
     display.drawRect(prevX, prevY, 10, 8, WHITE); // draw the new box
+    display.setTextColor(WHITE);
     drawNums();
 
     display.display();
@@ -260,6 +258,11 @@ char getNum() {
   } else {
     result = '\0'; // indicate the end of a number
   }
+
+  display.drawRect(prevX, prevY, 10, 8, BLACK); // blank off the last drawn box
+  display.setTextColor(BLACK); // clean up keypad
+  drawNums();
+
   return result;
 }
 
@@ -317,6 +320,11 @@ char getOperation() {
   } else {
     result = 'e'; // indicate program exit 
   }
+
+  display.drawRect(prevX, prevY, 10, 8, BLACK); // blank off the last drawn box
+  display.setTextColor(BLACK); // clean up keypad
+  drawOperators();
+
   return result;
 }
 
