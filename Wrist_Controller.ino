@@ -440,8 +440,9 @@ void calculator() {
       sequence[i] = '\0';
     }
 
-    do {
-      if (inputMode == 'a' || inputMode == 'b') { // check that we're inputting a number
+    if (inputMode == 'a' || inputMode == 'b') { // check that we're inputting a number
+      // number input loop
+      do {
         sequence[length] = getNum();
         if (sequence[length] == '<') {
           sequence[length] = '\0';
@@ -449,9 +450,6 @@ void calculator() {
           length--;
         } else if (sequence[length] == '\0') {
           if (inputMode == 'a') {
-            for (int i = 0; i < 10; i++) { // clear sequence for input num2
-              sequence[i] = '\0';
-            }
             length = 0;
             operationMode = 'b'; // kick out of the number input loop
           } else if (inputMode == 'b') {
@@ -461,45 +459,52 @@ void calculator() {
         } else {
           length++;
         }
-      }
+        
 
-      display.setTextColor(WHITE);
+        display.setTextColor(WHITE);
 
-      if (inputMode == 'a') {
-        num1 = parseDouble(sequence);
-        display.setCursor(0,0);
-        display.print("->");
-        display.setCursor(16,0);
-      } else if (inputMode == 'b') {
-        num2 = parseDouble(sequence);
-        display.setCursor(0,10);
-        display.print("->");
-        display.setCursor(16,10);
-      }
-      
-      display.print(sequence);
-      display.display();
-    } while (operationMode == 'a' && length < 10); // exit number input after user holds button
+        if (inputMode == 'a') {
+          num1 = parseDouble(sequence);
+          display.setCursor(0,0);
+          display.print("->");
+          display.setCursor(16,0);
+        } else if (inputMode == 'b') {
+          num2 = parseDouble(sequence);
+          display.setCursor(0,10);
+          display.print("->");
+          display.setCursor(16,10);
+        }
+        
+        display.print(sequence);
+        display.display();
+      } while (operationMode == 'a' && length < 10); // exit number input after user holds button
+    }
 
+    // mode manager
     if (inputMode == 'a') {
+      for (int i = 0; i < 10; i++) { // clear sequence
+        sequence[i] = '\0';
+      }
       String(num1,10).toCharArray(sequence, 10); // read the existing num1 into sequence
-      
       inputMode = 'b';
       operationMode = 'a';
     } else if (inputMode == 'b') {
+      for (int i = 0; i < 10; i++) { // clear sequence
+        sequence[i] = '\0';
+      }
       String(num2,10).toCharArray(sequence, 10); // read the existing num2 into sequence
-      
       inputMode = 'c';
       operation = getOperation();
-      operationMode = 'a';
     } else if (inputMode == 'c') {
       result = calculate(num1,num2,operation); // calculate the actual result
       display.setCursor(0,20);
-      display.print(result);
+      display.setTextColor(WHITE);
+      display.print(String(result,10));
+      inputMode = 'a';
+      operationMode = 'a';
     }
 
   } while (operation != 'e');
-
 }
 
 void loop() {
