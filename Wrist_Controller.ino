@@ -289,8 +289,9 @@ char getOperation() {
     prevX = val*12 + 63;
     prevY = sel*8 + 39;
     display.drawRect(prevX, prevY, 10, 8, WHITE);
+    
+    display.setTextColor(WHITE);
     drawOperators();
-
     display.display();
   } while (button || !reset);
 
@@ -461,6 +462,8 @@ void calculator() {
           length++;
         }
       }
+
+      display.setTextColor(WHITE);
 
       if (inputMode == 'a') {
         num1 = parseDouble(sequence);
