@@ -426,7 +426,7 @@ void calculator() {
   double num1 = 0, num2 = 0, result = 0;
   char operation = '+';
   char sequence[10];
-  int cycles = 0, val, sel, length = 0, power;
+  int cycles, val, sel, length = 0;
   bool button;
   char inputMode = 'a'; // a = input num1, b = input num2, c = input operation, d = answer input mode
   char operationMode = 'a'; // a = inputting, b = exiting
@@ -435,6 +435,7 @@ void calculator() {
 
   do { // loop over the input modes
     button = digitalRead(buttonPin);
+    cycles = 0;
 
     for (int i = 0; i < 10; i++) {
       sequence[i] = '\0';
@@ -459,7 +460,6 @@ void calculator() {
         } else {
           length++;
         }
-        
 
         display.setTextColor(WHITE);
 
@@ -470,7 +470,11 @@ void calculator() {
           display.setCursor(16,0);
         } else if (inputMode == 'b') {
           num2 = parseDouble(sequence);
+          display.setCursor(0,0);
+          display.setTextColor(BLACK);
+          display.print("->");
           display.setCursor(0,10);
+          display.setTextColor(WHITE);
           display.print("->");
           display.setCursor(16,10);
         }
@@ -485,18 +489,22 @@ void calculator() {
       for (int i = 0; i < 10; i++) { // clear sequence
         sequence[i] = '\0';
       }
-      String(num1,10).toCharArray(sequence, 10); // read the existing num1 into sequence
+      String(num1,10).toCharArray(sequence,10); // read the existing num1 into sequence
       inputMode = 'b';
       operationMode = 'a';
     } else if (inputMode == 'b') {
       for (int i = 0; i < 10; i++) { // clear sequence
         sequence[i] = '\0';
       }
-      String(num2,10).toCharArray(sequence, 10); // read the existing num2 into sequence
+      String(num2,10).toCharArray(sequence,10); // read the existing num2 into sequence
       inputMode = 'c';
+      operationMode = 'a';
       operation = getOperation();
     } else if (inputMode == 'c') {
       result = calculate(num1,num2,operation); // calculate the actual result
+      display.setTextColor(BLACK);
+      display.setCursor(0,10);
+      display.print("->");
       display.setCursor(0,20);
       display.setTextColor(WHITE);
       display.print(String(result,10));
@@ -504,7 +512,12 @@ void calculator() {
       operationMode = 'a';
     }
 
-  } while (operation != 'e');
+    while (!button && cycles < 3000) {
+      button = analogRead(buttonPin);
+      cycles++;
+    }
+
+  } while (operation != 'e' && cycles < 3000);
 }
 
 void loop() {
@@ -524,6 +537,10 @@ void loop() {
         switch (choice) {
           case 1:
             servo2(deadzone);
+            break;
+
+          case 3:
+            stopwatch();
             break;
 
           case 4:
