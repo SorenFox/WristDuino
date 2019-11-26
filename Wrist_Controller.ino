@@ -57,13 +57,13 @@ void setup() {
 void calibrate() {
 
   display.clearDisplay();
-  drawWindow(16,16,96,48,F("Calibration"),F("Move sliders to their maximum"));
+  drawWindow(16,8,96,48,F("Calibration"),F("Move sliders to their maximum"));
   display.display();
   delay(2000);
   maxVal = analogRead(leftPot);
   maxSel = analogRead(rightPot);
   display.clearDisplay();
-  drawWindow(16,16,96,48,F("Calibration"),F("Move sliders to their minimum"));
+  drawWindow(16,8,96,48,F("Calibration"),F("Move sliders to their minimum"));
   display.display();
   delay(2000);
   minVal = analogRead(leftPot);
@@ -83,10 +83,10 @@ int drawWindow(int x, int y, int sizex, int sizey, String title, String dialog) 
   
   display.setTextSize(1);
   cursorY = y+16;
-  for (int i = 0; i < ceil((float)dialog.length()/(float)tempSize); i++) {
+  for (int i = 0; i < ceil((float)dialog.length()/(float)tempSize); i++) { // iterate through lines
     display.setCursor(x+4,cursorY);
-    temp[tempSize] = '\n';
-    for (int j = i * tempSize; j < (i + 1) * tempSize; j++) {
+    temp[tempSize] = ' ';
+    for (int j = i * tempSize; j < (i + 1) * tempSize; j++) { // iterate through characters
       if (j < dialog.length()) {
         temp[j % tempSize] = dialog[j];
       } else {
@@ -120,7 +120,13 @@ int drawSelection(char above[10], char middle[10], char below[10]) {
   display.println(below);
 }
 
-bool getDialog(char text1[10], int x1, int y1, char text2[10], int x2, int y2) {
+void drawBox(int x, int y, int width, int height, bool colour) { // true = white, false = black
+  for (int i = y; i < y + height; i++) {
+    display.drawLine(x,i,x+width,i,colour ? WHITE:BLACK);
+  }
+}
+
+bool getDialog(String text1, int x1, int y1, String text2, int x2, int y2) {
   bool selection, button, reset = false;
   int val, sel;
 
@@ -392,7 +398,6 @@ void servo2(bool deadzone) {
     
     if ((abs(leftServo - val) > 30) || (abs(rightServo - sel) > 30)) {
       deadCycle = 0;
-      Serial.println("attached");
       left.attach(9);
       right.attach(10);
     }
@@ -428,7 +433,7 @@ void calculator() {
   char sequence[10];
   int cycles, val, sel, length = 0;
   bool button;
-  char inputMode = 'a'; // a = input num1, b = input num2, c = input operation, d = answer input mode
+  char inputMode = 'a'; // a = input num1, b = input num2, c = input operation
   char operationMode = 'a'; // a = inputting, b = exiting
 
   display.clearDisplay();
@@ -468,6 +473,7 @@ void calculator() {
           display.setCursor(0,0);
           display.print("->");
           display.setCursor(16,0);
+          drawBox(16,0,48,8,false);
         } else if (inputMode == 'b') {
           num2 = parseDouble(sequence);
           display.setCursor(0,0);
@@ -477,6 +483,7 @@ void calculator() {
           display.setTextColor(WHITE);
           display.print("->");
           display.setCursor(16,10);
+          drawBox(16,10,48,8,false);
         }
         
         display.print(sequence);
@@ -521,7 +528,6 @@ void calculator() {
 }
 
 void loop() {
-  
   do {
     for (int i = 0; i < 6; i++) {
       strcpy_P(buffer[i], (char *)pgm_read_word(&(main[i])));
@@ -540,7 +546,7 @@ void loop() {
             break;
 
           case 3:
-            stopwatch();
+            //stopwatch();
             break;
 
           case 4:
@@ -561,8 +567,8 @@ void loop() {
         switch (choice) {
           case 1:
             display.clearDisplay();
-            drawWindow(16,4,96,56,"Settings","Enable servo deadzone?");
-            deadzone = getDialog("disable",18,40,"enable",64,40);
+            drawWindow(16,4,96,56,F("Settings"),F("Enable servo deadzone?"));
+            deadzone = getDialog(F("disable"),18,40,F("enable"),64,40);
             break;
 
           case 2:
