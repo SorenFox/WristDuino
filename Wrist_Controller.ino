@@ -204,7 +204,9 @@ void drawNums() {
   display.setCursor(64,48);
   display.print(F("4 5 6 ."));
   display.setCursor(64,56);
-  display.print(F("1 2 3 0"));
+  display.print(F("1 2 3 0 +"));
+  display.setCursor(112,56);
+  display.print(F("_"));
 }
 
 void drawOperators() {
@@ -226,8 +228,12 @@ char getNum() {
     button = digitalRead(buttonPin);
     val = analogRead(leftPot);
     sel = analogRead(rightPot);
-    val = constrain(map(val, minVal, maxVal, 0, 3), 0, 3);
     sel = constrain(map(sel, minSel, maxSel, 0, 2), 0, 2);
+    if (sel == 2) {
+      val = constrain(map(val, minVal, maxVal, 0, 4), 0, 4);
+    } else {
+      val = constrain(map(val, minVal, maxVal, 0, 4), 0, 3);
+    }
 
     if (button) {
       reset = true;
@@ -254,12 +260,14 @@ char getNum() {
   if (cycles < 30000) {
     if (val < 3) {
       result = 55 - sel*3 + val; // 30 + number logic (for ASCII char)
-    } else if (sel == 2) {
+    } else if (sel == 2 && val == 3) {
       result = 48;
     } else if (sel == 1) {
       result = '.';
+    } else if (sel == 0) {
+      result = '<'; // delete
     } else {
-      result = '<';
+      result = '-'; // invert sign
     }
   } else {
     result = '\0'; // indicate the end of a number
@@ -338,15 +346,24 @@ char getOperation() {
 double parseDouble(char inChars[10]) { // parse a string of chars to a double
   int power = 1;
   double result = 0.0;
+  bool sign = true; // true = positive, false = negative
 
   for (int i = 9; i >=0; i--) {
     if (inChars[i] == '.') {
       result /= power;
       power = 1;
+    } else if (inChars[i] == '-') { // only one should exist per sequence
+      sign = false;
+    } else if (inChars[i] == '+') {
+      sign = true;
     } else if (inChars[i] != '\0') {
       result += power * (double)(inChars[i] - 48);
       power *= 10;
     }
+  }
+
+  if (!sign) {
+    result *= -1;
   }
 
   return result;
@@ -430,8 +447,8 @@ void servo2(bool deadzone) {
 void calculator() { // horrible gibberish that approaches functionality
   double num1 = 0, num2 = 0, result = 0;
   char operation = '+';
-  char sequence[10];
-  int cycles, val, sel, length = 0;
+  char sequence[11];
+  int cycles, val, sel, length = 1;
   bool button;
   char inputMode = 'a'; // a = input num1, b = input num2, c = input operation
   char operationMode = 'a'; // a = inputting, b = exiting
@@ -442,7 +459,8 @@ void calculator() { // horrible gibberish that approaches functionality
     button = digitalRead(buttonPin);
     cycles = 0;
 
-    for (int i = 0; i < 10; i++) {
+    sequence[0] = '+';
+    for (int i = 1; i < 11; i++) {
       sequence[i] = '\0';
     }
 
@@ -451,10 +469,17 @@ void calculator() { // horrible gibberish that approaches functionality
       do {
         sequence[length] = getNum();
         if (sequence[length] == '<') {
-          if (length >= 1) { // make sure the user doesn't delete backwards into random memory
-            sequence[length] = '\0';
+          sequence[length] = '\0';
+          if (length >= 2) { // make sure the user doesn't delete backwards into random memory
             sequence[length - 1] = '\0';
             length--;
+          }
+        } else if (sequence[length] == '-') { // switch the sign
+          sequence[length] = '\0';
+          if (sequence[0] == '+') {
+            sequence[0] = '-';
+          } else {
+            sequence[0] = '+';
           }
         } else if (sequence[length] == '\0') {
           if (inputMode == 'a') {
@@ -490,22 +515,24 @@ void calculator() { // horrible gibberish that approaches functionality
         
         display.print(sequence);
         display.display();
-      } while (operationMode == 'a' && length < 9); // exit number input after user holds button
+      } while (operationMode == 'a' && length < 10); // exit number input after user holds button
     }
 
     // mode manager
     if (inputMode == 'a') {
-      for (int i = 0; i < 10; i++) { // clear sequence
+      sequence[0] = '+';
+      for (int i = 1; i < 11; i++) { // clear sequence
         sequence[i] = '\0';
       }
-      length = 0;
+      length = 1;
       inputMode = 'b';
       operationMode = 'a';
     } else if (inputMode == 'b') {
-      for (int i = 0; i < 10; i++) { // clear sequence
+      sequence[0] = '+';
+      for (int i = 1; i < 11; i++) { // clear sequence
         sequence[i] = '\0';
       }
-      length = 0;
+      length = 1;
       inputMode = 'c';
       operationMode = 'a';
       operation = getOperation();
