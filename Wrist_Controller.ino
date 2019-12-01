@@ -97,6 +97,8 @@ int drawWindow(int x, int y, int sizex, int sizey, String title, String dialog) 
     cursorY += 8;
   }
 
+  drawBox(x + sizex, y, 128-(x+sizex), sizey, false);
+
   return 0;
 }
 
@@ -611,7 +613,7 @@ void loop() {
         break;
       case 3:
         display.clearDisplay();
-        drawWindow(8,8,112,48,F("About"),F("V0.2   Developed by Joseph Loveday"));
+        drawWindow(8,8,112,48,F("About"),F("V0.2 Developed by Joseph Loveday"));
         display.display();
         delay(3000);
         break;
