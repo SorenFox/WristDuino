@@ -473,7 +473,7 @@ void calculator() {
           display.setCursor(0,0);
           display.print("->");
           display.setCursor(16,0);
-          drawBox(16,0,48,8,false);
+          drawBox(16,0,112,8,false);
         } else if (inputMode == 'b') {
           num2 = parseDouble(sequence);
           display.setCursor(0,0);
@@ -483,12 +483,12 @@ void calculator() {
           display.setTextColor(WHITE);
           display.print("->");
           display.setCursor(16,10);
-          drawBox(16,10,48,8,false);
+          drawBox(16,10,112,8,false);
         }
         
         display.print(sequence);
         display.display();
-      } while (operationMode == 'a' && length < 10); // exit number input after user holds button
+      } while (operationMode == 'a' && length < 9); // exit number input after user holds button
     }
 
     // mode manager
@@ -496,14 +496,14 @@ void calculator() {
       for (int i = 0; i < 10; i++) { // clear sequence
         sequence[i] = '\0';
       }
-      String(num1,10).toCharArray(sequence,10); // read the existing num1 into sequence
+      length = 0;
       inputMode = 'b';
       operationMode = 'a';
     } else if (inputMode == 'b') {
       for (int i = 0; i < 10; i++) { // clear sequence
         sequence[i] = '\0';
       }
-      String(num2,10).toCharArray(sequence,10); // read the existing num2 into sequence
+      length = 0;
       inputMode = 'c';
       operationMode = 'a';
       operation = getOperation();
@@ -513,6 +513,7 @@ void calculator() {
       display.setCursor(0,10);
       display.print("->");
       display.setCursor(0,20);
+      drawBox(0,20,128,18,false);
       display.setTextColor(WHITE);
       display.print(String(result,10));
       inputMode = 'a';
