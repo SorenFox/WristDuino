@@ -427,7 +427,7 @@ void servo2(bool deadzone) {
   right.detach();
 }
 
-void calculator() {
+void calculator() { // horrible gibberish that approaches functionality
   double num1 = 0, num2 = 0, result = 0;
   char operation = '+';
   char sequence[10];
@@ -451,9 +451,11 @@ void calculator() {
       do {
         sequence[length] = getNum();
         if (sequence[length] == '<') {
-          sequence[length] = '\0';
-          sequence[length - 1] = '\0';
-          length--;
+          if (length >= 1) { // make sure the user doesn't delete backwards into random memory
+            sequence[length] = '\0';
+            sequence[length - 1] = '\0';
+            length--;
+          }
         } else if (sequence[length] == '\0') {
           if (inputMode == 'a') {
             length = 0;
