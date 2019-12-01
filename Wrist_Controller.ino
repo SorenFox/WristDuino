@@ -451,6 +451,9 @@ void randomServo(bool twitching) { // organic-ish movements from randomness
   bool button = false;
   int curPos[2] = {0,0}, nextPos[2] = {0,0}, steps;
 
+  display.clearDisplay();
+  display.display();
+
   do {
     button = digitalRead(buttonPin);
 
