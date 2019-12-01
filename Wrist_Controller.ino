@@ -27,8 +27,8 @@ const char run3[] PROGMEM = "stopwatch";
 const char run4[] PROGMEM = "calculator";
 
 const char set1[] PROGMEM = "deadzone";
-const char set2[] PROGMEM = "calibrate";
-const char set3[] PROGMEM = "-";
+const char set2[] PROGMEM = "twitching";
+const char set3[] PROGMEM = "calibrate";
 const char set4[] PROGMEM = "-";
 
 const char *const main[] PROGMEM = {string0,main1,main2,main3,main4,string0};
@@ -37,7 +37,7 @@ const char *const settings[] PROGMEM = {string0,set1,set2,set3,set4,string0};
 
 int leftPot = 0, rightPot = 1, buttonPin = 2;
 int val, maxVal, minVal, maxSel, minSel, choice;
-bool deadzone = true;
+bool deadzone = true, twitch = true;
 char buffer[6][10];
 
 void setup() {
@@ -446,6 +446,52 @@ void servo2(bool deadzone) {
   right.detach();
 }
 
+void randomServo(bool twitching) { // organic-ish movements from randomness
+  Servo left, right;
+  bool button = false;
+  int curPos[2] = {0,0}, nextPos[2] = {0,0}, steps;
+
+  do {
+    button = digitalRead(buttonPin);
+
+    if (twitching && random(0,100) < 3) { // twitch movement
+      steps = random(1,3);
+      nextPos[round(random(0,1)) ? 0 : 1] = random(80,180);
+    } else if (random(0,100) < 90) { // do nothing, align servos
+      steps = 4000;
+      if (steps % 2 == 0) {
+        nextPos[0] = nextPos[1];
+      } else {
+        nextPos[1] = nextPos[0];
+      }
+    } else {
+      nextPos[0] = random(80,180);
+      nextPos[1] = nextPos[0];
+      steps = random(5000,10000);
+    }
+
+    if (curPos[0] == nextPos[0]) {
+      left.detach();
+    } else {
+      left.attach(9);
+    }
+
+    if (curPos[1] == nextPos[1]) {
+      right.detach();
+    } else {
+      right.attach(10);
+    }
+
+    for (int i = 0; i < steps; i++) {
+      left.write(curPos[0] + i*(double)(nextPos[0] - curPos[0])/steps);
+      right.write(curPos[1] + i*(double)(nextPos[1] - curPos[1])/steps);
+    }
+
+    curPos[0] = nextPos[0];
+    curPos[1] = nextPos[1];
+  } while (button);
+}
+
 void calculator() { // horrible gibberish that approaches functionality
   double num1 = 0, num2 = 0, result = 0;
   char operation = '+';
@@ -576,6 +622,10 @@ void loop() {
           case 1:
             servo2(deadzone);
             break;
+          
+          case 2:
+            randomServo(twitch);
+            break;
 
           case 3:
             //stopwatch();
@@ -604,6 +654,12 @@ void loop() {
             break;
 
           case 2:
+            display.clearDisplay();
+            drawWindow(16,4,96,56,F("Settings"),F("Enable twitching in randServo?"));
+            twitch = getDialog(F("disable"),18,40,F("enable"),64,40);
+            break;
+
+          case 3:
             calibrate();
             break;
 
