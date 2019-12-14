@@ -39,6 +39,8 @@ int leftPot = 0, rightPot = 1, buttonPin = 2;
 int val, maxVal, minVal, maxSel, minSel, choice;
 bool deadzone = true, twitch = true;
 char buffer[6][10];
+int selSmooth[4] = {analogRead(rightPot)}, valSmooth[4] = {analogRead(leftPot)};
+int selPos = 0, valPos = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -68,6 +70,25 @@ void calibrate() {
   delay(2000);
   minVal = analogRead(leftPot);
   minSel = analogRead(rightPot);
+}
+
+int smooth(int newValue, int (&array)[4], int &position) {
+  int result = 0;
+  
+  if (position < sizeof(array)/sizeof(int)) {
+    array[position] = newValue;
+    position++;
+  } else {
+    array[0] = newValue;
+    position = 1;
+  }
+
+  for (int i = 0; i < sizeof(array)/sizeof(int); i++) {
+    result += array[i];
+  }
+
+  result /= (sizeof(array)/sizeof(int));
+  return result;
 }
 
 int drawWindow(int x, int y, int sizex, int sizey, String title, String dialog) {
@@ -176,8 +197,8 @@ int getSelection(char items[6][10]) {
 
   do {
     button = digitalRead(buttonPin);
-    val = analogRead(leftPot);
-    sel = analogRead(rightPot);
+    val = smooth(analogRead(leftPot),valSmooth,valPos);
+    sel = smooth(analogRead(rightPot),selSmooth,selPos);
     val = constrain(map(val, minVal, maxVal, 1, 4), 1, 4);
     sel = map(sel, minSel, maxSel, 0, 63);
 
@@ -228,8 +249,8 @@ char getNum() {
 
   do {
     button = digitalRead(buttonPin);
-    val = analogRead(leftPot);
-    sel = analogRead(rightPot);
+    val = smooth(analogRead(leftPot),valSmooth,valPos);
+    sel = smooth(analogRead(rightPot),selSmooth,selPos);
     sel = constrain(map(sel, minSel, maxSel, 0, 2), 0, 2);
     if (sel == 2) {
       val = constrain(map(val, minVal, maxVal, 0, 4), 0, 4);
@@ -289,8 +310,8 @@ char getOperation() {
 
   do {
     button = digitalRead(buttonPin);
-    val = analogRead(leftPot);
-    sel = analogRead(rightPot);
+    val = smooth(analogRead(leftPot),valSmooth,valPos);
+    sel = smooth(analogRead(rightPot),selSmooth,selPos);
     val = constrain(map(val, minVal, maxVal, 0, 1), 0, 1);
     sel = constrain(map(sel, minSel, maxSel, 0, 2), 0, 2);
 
@@ -403,8 +424,8 @@ void servo2(bool deadzone) {
 
   do {
     button = digitalRead(buttonPin);
-    val = analogRead(leftPot);
-    sel = analogRead(rightPot);
+    val = smooth(analogRead(leftPot),valSmooth,valPos);
+    sel = smooth(analogRead(rightPot),selSmooth,selPos);
     val = constrain(map(val, minVal, maxVal, 80, 180), 80, 180);
     sel = constrain(map(sel, minSel, maxSel, 80, 180), 80, 180);
 
