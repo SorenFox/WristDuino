@@ -23,8 +23,8 @@ const char main4[] PROGMEM = "power off";
 
 const char run1[] PROGMEM = "2servo";
 const char run2[] PROGMEM = "autoServo";
-const char run3[] PROGMEM = "lock";
-const char run4[] PROGMEM = "calculator";
+const char run3[] PROGMEM = "calc";
+const char run4[] PROGMEM = "lock";
 
 const char set1[] PROGMEM = "deadzone";
 const char set2[] PROGMEM = "twitching";
