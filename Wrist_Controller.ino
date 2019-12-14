@@ -629,6 +629,21 @@ void calculator() { // horrible gibberish that approaches functionality
   } while (operation != 'e' && cycles < 3000);
 }
 
+void lockscreen() {
+  bool button = true;
+
+  display.clearDisplay();
+  drawWindow(8,8,112,48,F("locked"),F("press button to exit"));
+  display.display();
+  delay(3000);
+  display.clearDisplay();
+  display.display();
+
+  while (button) {
+    button = digitalRead(buttonPin);
+  }
+}
+
 void loop() {
   do {
     for (int i = 0; i < 6; i++) {
@@ -652,11 +667,11 @@ void loop() {
             break;
 
           case 3:
-            //stopwatch();
+            calculator();
             break;
 
           case 4:
-            calculator();
+            lockscreen();
             break;
 
           default:
