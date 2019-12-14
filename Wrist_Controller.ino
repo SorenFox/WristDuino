@@ -22,8 +22,8 @@ const char main3[] PROGMEM = "about";
 const char main4[] PROGMEM = "power off";
 
 const char run1[] PROGMEM = "2servo";
-const char run2[] PROGMEM = "randServo";
-const char run3[] PROGMEM = "stopwatch";
+const char run2[] PROGMEM = "autoServo";
+const char run3[] PROGMEM = "lock";
 const char run4[] PROGMEM = "calculator";
 
 const char set1[] PROGMEM = "deadzone";
@@ -444,8 +444,8 @@ void servo2(bool deadzone) {
     
     while ((deadCycle < 5000) && button) {
       button = digitalRead(buttonPin);
-      val = analogRead(leftPot);
-      sel = analogRead(rightPot);
+      val = smooth(analogRead(leftPot),valSmooth,valPos);
+      sel = smooth(analogRead(rightPot),selSmooth,selPos);
       val = constrain(map(val, minVal, maxVal, 80, 180), 80, 180);
       sel = constrain(map(sel, minSel, maxSel, 80, 180), 80, 180);
 
@@ -679,7 +679,7 @@ void loop() {
 
           case 2:
             display.clearDisplay();
-            drawWindow(16,4,96,56,F("Settings"),F("Enable twitching in randServo?"));
+            drawWindow(16,4,96,56,F("Settings"),F("Enable twitching in autoServo?"));
             twitch = getDialog(F("disable"),18,40,F("enable"),64,40);
             break;
 
