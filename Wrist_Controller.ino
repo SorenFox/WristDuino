@@ -91,6 +91,20 @@ int smooth(int newValue, int (&array)[4], int &position) {
   return result;
 }
 
+void loadScreen(int position, int width, int thickness) {
+  float actualPos = position * (3.1415926 / 180);
+  
+  for (int i = 0; i < thickness; i++) {
+    display.drawCircle(64,32,(12 + i),WHITE);
+  }
+
+  for (int j = 0; j < width; j++) {
+    display.drawLine(64 + 12*cos(actualPos+j*0.05),32 + 12*sin(actualPos+j*0.05),64 + (12+thickness) * cos(actualPos+j*0.05),32 + (12+thickness) * sin(actualPos+j*0.05),BLACK);
+  }
+
+  display.display();
+}
+
 int drawWindow(int x, int y, int sizex, int sizey, String title, String dialog) {
   int cursorY, tempSize = sizex/6 - 1;
   char temp[tempSize + 1];
@@ -631,6 +645,7 @@ void calculator() { // horrible gibberish that approaches functionality
 
 void lockscreen() {
   bool button = true;
+  int loadInc = 0;
 
   display.clearDisplay();
   drawWindow(8,8,112,48,F("locked"),F("press button to exit"));
@@ -641,6 +656,12 @@ void lockscreen() {
 
   while (button) {
     button = digitalRead(buttonPin);
+    loadScreen(loadInc,12,3);
+    if (loadInc < 359) {
+      loadInc += 10;
+    } else {
+      loadInc = 0;
+    }
   }
 }
 
