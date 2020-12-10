@@ -31,7 +31,7 @@ const char set2[] PROGMEM = "twitching";
 const char set3[] PROGMEM = "calibrate";
 const char set4[] PROGMEM = "-";
 
-const char *const main[] PROGMEM = {string0,main1,main2,main3,main4,string0};
+const char *const mainMenu[] PROGMEM = {string0,main1,main2,main3,main4,string0};
 const char *const runProgs[] PROGMEM = {string0,run1,run2,run3,run4,string0};
 const char *const settings[] PROGMEM = {string0,set1,set2,set3,set4,string0};
 
@@ -668,7 +668,7 @@ void lockscreen() {
 void loop() {
   do {
     for (int i = 0; i < 6; i++) {
-      strcpy_P(buffer[i], (char *)pgm_read_word(&(main[i])));
+      strcpy_P(buffer[i], (char *)pgm_read_word(&(mainMenu[i])));
     }
     choice = getSelection(buffer);
     
